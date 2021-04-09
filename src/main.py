@@ -8,7 +8,8 @@ from flask_swagger import swagger
 from flask_cors import CORS
 from utils import APIException, generate_sitemap
 from admin import setup_admin
-from models import db, User
+from models import db, Person
+import datetime 
 #from models import Person
 
 app = Flask(__name__)
@@ -30,14 +31,71 @@ def handle_invalid_usage(error):
 def sitemap():
     return generate_sitemap(app)
 
-@app.route('/user', methods=['GET'])
-def handle_hello():
+@app.route('/people', methods=['GET'])
+def get_all_people():
+    people=Person.query.all()
+    all_people=list(map(lambda person:person.serialize(),people))
 
-    response_body = {
-        "msg": "Hello, this is your GET /user response "
-    }
+    if all_people==[]:
+        return jsonify('Nothing here!')
+    else:
+        return jsonify(all_people), 200
 
-    return jsonify(response_body), 200
+@app.route('/newperson',methods=['POST'])
+def create_person():
+    request_body=request.get_json()
+    name=request.json.get('name',None)
+    last_name=request.json.get('last_name',None)
+    date_of_birth=request.json.get('date_of_birth',None)
+    age=request.json.get('age',None)
+    if not name:
+        return jsonify({'msg':'Name required'}),400
+    if not last_name:
+        return jsonify({'msg':'Last Name required'}),400
+    if not date_of_birth:
+        return jsonify({'msg':'Date of birth required'}),400
+    if not age:
+        return jsonify({'msg':'Age of birth required'}),400
+    
+    newPerson = Person(name=name, last_name=last_name, date_of_birth=date_of_birth,age=age)
+    db.session.add(newPerson)
+    db.session.commit()
+    return jsonify(request_body),200
+
+@app.route('/person/<int:id>')
+def get_person(id):
+    person=Person.query.get(id)
+
+    ############### Children ###############
+    child_id =Person.query.filter_by(mother_id=id)
+    child_id2 =Person.query.filter_by(father_id=id)
+    print('child',child_id,child_id2)
+
+    ############ Parents ######################
+    mother_id=person.mother_id
+    father_id=person.father_id
+    mother=Person.query.filter_by(mother_id=mother_id)
+    father=Person.query.filter_by(father_id=father_id)
+
+    print('parents',mother,father)
+    ############### Grand Parents ##############
+                        ########### Mother Parents
+    grand_ma_id_mother= mother.mother_id
+    grand_pa_id_mother= mother.father_id
+    grand_ma_mother=Person.query.filter(mother_id=grand_ma_id_mother)
+    garnd_pa_mother =Person.query.filter(father_id=grand_pa_id_mother)
+
+    print('gandMother',grand_ma_mother,garnd_pa_mother)
+                        ########### Father Parents
+    grand_ma_id_father= father.mother_id
+    grand_pa_id_father= father.father_id
+    grand_ma_father=Person.query.filter(mother_id=grand_ma_id_father)
+    garnd_pa_father =Person.query.filter(father_id=grand_pa_id_father)
+    print('gandFather',grand_ma_father,garnd_pa_father)
+    
+
+
+    return jsonify(person.serialize())
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
