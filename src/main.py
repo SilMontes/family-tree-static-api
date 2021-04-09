@@ -46,30 +46,29 @@ def create_person():
     request_body=request.get_json()
     name=request.json.get('name',None)
     last_name=request.json.get('last_name',None)
-    date_of_birth=request.json.get('date_of_birth',None)
     age=request.json.get('age',None)
     if not name:
         return jsonify({'msg':'Name required'}),400
     if not last_name:
         return jsonify({'msg':'Last Name required'}),400
-    if not date_of_birth:
-        return jsonify({'msg':'Date of birth required'}),400
     if not age:
         return jsonify({'msg':'Age of birth required'}),400
     
-    newPerson = Person(name=name, last_name=last_name, date_of_birth=date_of_birth,age=age)
+    newPerson = Person(name=name, last_name=last_name,age=age)
     db.session.add(newPerson)
     db.session.commit()
     return jsonify(request_body),200
 
-@app.route('/person/<int:id>')
-def get_person(id):
+@app.route('/person/<int:person_id>')
+def get_person(person_id):
     person=Person.query.get(id)
 
     ############### Children ###############
-    child_id =Person.query.filter_by(mother_id=id)
-    child_id2 =Person.query.filter_by(father_id=id)
-    print('child',child_id,child_id2)
+    child_id =Person.query.filter_by(mother_id=person_id)
+    print('child1',child_id)
+    if not child_id:
+        child_id2 =Person.query.filter_by(father_id=person_id)
+        print('child',child_id2)
 
     ############ Parents ######################
     mother_id=person.mother_id
