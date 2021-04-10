@@ -121,39 +121,82 @@ def get_specified_person(person_id):
     #!!!!!!!!!!!!!!!!CHILDREN!!!!!!!!!!!!!
     # child id
     children_id=[]
-    parents_id=[]
+    mother_id=None
+    father_id=None
     for items in all_relationships:
         if items['mother_id']!= None and items['mother_id'] == person_id:
             children_id.append(items['person_id'])
         elif items['father_id']!= None and items['father_id'] == person_id:
             children_id.append(items['person_id'])
         elif items['person_id']==person_id: ##append parent id
-            parents_id.append({'mother':items['mother_id']})
-            parents_id.append({'father':items['father_id']})
+            mother_id=items['mother_id']
+            father_id=items['father_id']
+        
 
     children_information=[]
     for eachId in children_id:
         for person in all_people:
             if person['id'] == eachId:
                 children_information.append(person)
-    
     pieces_of_information['children']=children_information
+    #!!!!!!!!!!!!!!!!!!!!!!!!!! Grand Parent !!!!!!!!!!!!!!!!!11
+    grand_father_id_from_mommy=None
+    grand_mother_id_from_mommy=None
+    grand_father_id_from_daddy=None
+    grand_mother_id_from_daddy=None
 
-    #!!!!!!!!!!!!!!!!!!! Parent !!!!!!!!!!!!!!!!!!!!!!!!!!
+    for eachperson in all_relationships:
+        if mother_id==eachperson['person_id']:
+            grand_father_id_from_mommy=eachperson['father_id']
+            grand_mother_id_from_mommy=eachperson['mother_id']
+        elif father_id==eachperson['person_id']:
+            grand_father_id_from_daddy=eachperson['father_id']
+            grand_mother_id_from_daddy=eachperson['mother_id']
+
+        #!!!!!!!!!!!!!!!!!!! Parent !!!!!!!!!!!!!!!!!!!!!!!!!!
     parents_information={}
-    for eachParentId in parents_id:
-        for eachperson in all_people:
-            if 'mother' in eachParentId:
-                if eachParentId['mother']==eachperson['id']: ###padres
-                    parents_information['mother']=eachperson
-            elif 'father' in eachParentId:
-                if eachParentId['father']==eachperson['id']: ###padres
-                    parents_information['father']=eachperson
-    pieces_of_information['parents information']=parents_information
-
+    grand_parents_info={'from_mommy':{'grand_pa':{},'grand_ma':{}},'from_daddy':{'grand_pa':{},'grand_ma':{}}}
+    for eachperson in all_people:
+        if mother_id==eachperson['id']: ###padres
+            parents_information['mother']=eachperson
+        elif father_id==eachperson['id']: ###padres
+            parents_information['father']=eachperson
+        elif grand_father_id_from_mommy==eachperson['id']: ####GranParents
+            grand_parents_info['from_mommy']['grand_pa']=eachperson
+        elif grand_mother_id_from_mommy==eachperson['id']:
+            grand_parents_info['from_mommy']['grand_ma']=eachperson
+        elif grand_father_id_from_daddy==eachperson['id']:
+            grand_parents_info['from_daddy']['grand_pa']=eachperson
+        elif grand_mother_id_from_daddy==eachperson['id']:
+            grand_parents_info['from_daddy']['grand_ma']=eachperson
+    pieces_of_information['parents']=parents_information
+    pieces_of_information['grandparents']=grand_parents_info
     return jsonify(pieces_of_information),200
 
+#---------------------------DELETE PERSON-------------------------------------
+@app.route('/delete/person/<int:person_id>',methods=['DELETE'])
+def delete_person(person_id):
+    person_id_being_used=PeopleRelationship.query.filter_by(person_id=person_id).first()
+    person_id_being_used_as_mother=PeopleRelationship.query.filter_by(mother_id=person_id).first()
+    person_id_being_used_as_father=PeopleRelationship.query.filter_by(father_id=person_id).first()
+    if person_id_being_used or person_id_being_used_as_mother or person_id_being_used_as_father:
+        return jsonify('Action impossible to perform.'),400
+    person_to_delete=Person.query.filter_by(id=person_id).first()
+    if not person_to_delete:
+        return jsonify('This person doesn\'t even exist'),400
+    db.session.delete(person_to_delete)
+    db.session.commit()
+    return jsonify('Successfuly deleted'),200
 #---------------------------
+@app.route('/delete/relationship/<int:person_id>',methods=['DELETE'])
+def delete_relation_ship(person_id):
+    relationship_to_delete=PeopleRelationship.query.filter_by(person_id=person_id).first()
+    if not relationship_to_delete:
+        return jsonify('It does not exist'),400
+    db.session.delete(relationship_to_delete)
+    db.session.commit()
+    return jsonify('Deleted'),200
+
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3000))
