@@ -30,6 +30,33 @@ def handle_invalid_usage(error):
 @app.route('/')
 def sitemap():
     return generate_sitemap(app)
+#///////////////////////////////// ADD PEOPLE AND CRETAE RELATIONSHIP//////////////////////////////////////
+
+@app.before_first_request
+def add_people_before_first_request():
+    adding_people=[{"age": 60,"last_name": "test", "name": "Leo"},{"age": 60,"last_name": "test", "name": "Luis"},{"age": 60,"last_name": "test", "name": "Aaron"},{"age": 60, "last_name": "test1", "name": "Laura"},{"age": 60, "last_name": "test1", "name": "Lucas"},{"age": 30,"last_name": "test1", "name": "Ana"},{"age": 15,"last_name": "test test1","name": "Hugo"},{"age": 10,"last_name": "test test1","name": "Hilary"
+    }]
+    people=Person.query.all()
+    all_people=list(map(lambda person:person.serialize(),people))
+
+    if all_people==[]:
+        for item in adding_people:
+            newPerson=Person(name=item['name'],last_name=item['last_name'],age=item['age'])
+            db.session.add(newPerson)
+        db.session.commit()
+    
+    
+    creating_relationship=[{"person_id": "3","mother_id": "1","father_id": "2"},{"person_id": "6","mother_id": "4","father_id": "5"},{"person_id": "7","mother_id": "6","father_id": "3"},{"person_id": "8","mother_id": "6","father_id": "3"}]
+    relationships=PeopleRelationship.query.all()
+    all_relationships=list(map(lambda item:item.serialize(),relationships))
+
+    if all_relationships == []:
+        for eachItem in creating_relationship:
+            newOne=PeopleRelationship(person_id=eachItem['person_id'],mother_id=eachItem['mother_id'],father_id=eachItem['father_id'])
+            db.session.add(newOne)
+    db.session.commit()
+
+    return jsonify('Added'),200
 #------GET ALL PEOLPLE--------------------------------------------
 @app.route('/people', methods=['GET'])
 def get_all_people():
