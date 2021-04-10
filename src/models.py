@@ -27,7 +27,7 @@ class PeopleRelationship(db.Model):
     mother_id = db.Column(db.Integer,db.ForeignKey('person.id'),nullable=True)
 
     def __repr__(self):
-        return '<Relationship %r>' % self.id
+        return '<PeopleRelationship %r>' % self.id
 
     def serialize(self):
         return {

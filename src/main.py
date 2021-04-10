@@ -85,6 +85,9 @@ def create_relationship():
     father_id=request.json.get('father_id')
     if not person_id:
         return jsonify('Person_id required'),400
+    doesPersonExists=Person.query.filter_by(id=person_id).first()
+    if not doesPersonExists:
+        return jsonify('This person doesn not exists!')
     already_assigned_relationship=PeopleRelationship.query.filter_by(person_id=person_id).first()
     if already_assigned_relationship:
         return jsonify('Already added'),400
